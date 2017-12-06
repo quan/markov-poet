@@ -5,6 +5,13 @@ from enum import Enum
 from haiku_loader import HaikuLoader
 
 
+class UntrainedModelError(Exception):
+    def __init__(self, msg=None):
+        if msg is None:
+            msg = "Insufficient data was provided to the Markov model"
+        super(UntrainedModelError, self).__init__(msg)
+
+
 class Token(Enum):
     NEWLINE = '\n'
     END = '\n\n'
@@ -28,8 +35,16 @@ class Markov:
         '''
         if filename is None:
             self._train_default()
+        else:
+            raise NotImplementedError
 
-        return
+    def generate(self, lines=3):
+        '''
+        '''
+        if len(self.graph.keys()) == 0:
+            raise UntrainedModelError
+        else:
+            raise NotImplementedError
 
     def _train_default(self):
         '''
@@ -75,3 +90,6 @@ class Markov:
         debug_string += 'order of {}'.format(self.order)
 
         return debug_string
+
+    def __str__(self):
+        return self.debug_string()
