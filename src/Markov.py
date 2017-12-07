@@ -8,10 +8,10 @@ EPSILON = 0.000001
 
 
 class UntrainedModelError(Exception):
-    '''
+    """
     An exception raised when the model's generate method is called with
     insufficient training data.
-    '''
+    """
 
     def __init__(self, msg=None):
         if msg is None:
@@ -27,9 +27,9 @@ class Token(Enum):
 
 
 class Markov:
-    '''
+    """
     Models a Markov chain with words as states.
-    '''
+    """
     def __init__(self, order=1):
         # The number of previous states the Markov Chain will consider.
         # Values above 2 are not recommended.
@@ -40,21 +40,24 @@ class Markov:
         self.graph = {}
 
     def train(self, filename=None):
-        '''
-        '''
+        """
+        """
         if filename is None:
             self._train_default()
         else:
             raise NotImplementedError
 
-    def add_to_training_data(self, haiku):
-        '''
-        Adds the given haiku to this Markov model's data.
-        Expects a list of strings, where each string is a line in the haiku.
-        '''
+    def add_to_training_data(self, poem):
+        """
+        Add the word parems in a poem to this Markov model's data.
+        Expects a list of strings, where each string is a line in a poem.
+        """
 
-        # Create a single list of words with a newline token following each line.
-        all_words = reduce(lambda x, y: x + y.split() + [Token.NEWLINE], haiku, [Token.START])
+        # Reduce the poem into a single list of words with a newline token following each line.
+        all_words = [Token.START]
+        for line in poem:
+            all_words.extend(line.split())
+            all_words.append(Token.NEWLINE)
 
         # Save the word pairings in the graph, skipping newlines.
         for index in range(len(all_words) - 1):
@@ -71,10 +74,10 @@ class Markov:
             self.graph[word].append(next_word)
 
     def generate(self, lines=3, randomness=0):
-        '''
-        Generates a poem from the training data with the given number of lines.
-        Returns the poem as a list of lines.
-        '''
+        """
+        Generate a poem from the training data with the given number of lines.
+        Return the poem as a list of lines.
+        """
         if randomness - 1.0 > EPSILON:
             raise ValueError("Randomness should be a value between 0.0 and 1.0, inclusive")
 
@@ -88,10 +91,17 @@ class Markov:
 
         return poem
 
+    def generate_formatted(self, lines=3, randomness=0):
+        """
+        Generate a poem based on the training data with the given number of lines.
+        Return the poem as a string.
+        """
+        generated_lines = self.generate(lines, randomness)
+        formatted_poem = '\n'.join(generated_lines)
+        return formatted_poem
+
     def generate_line(self):
-        '''
-        Generates a single line in a poem.
-        '''
+        """Generate a single line in a poem."""
         words = []
 
         # Select the first word by beginning with the start token.
@@ -109,16 +119,12 @@ class Markov:
         return line
 
     def _next_state(self, state):
-        '''
-        Randomly selects the next state for the given state.
-        '''
+        """Randomly select the next state for a given state."""
         next_states = tuple(self.graph[state])
         return random.choice(next_states)
 
     def _train_default(self):
-        '''
-        Trains the model using the default example data set.
-        '''
+        """Train the model using the default example data set."""
         loader = HaikuLoader()
         haiku_list = loader.get_all()
 
@@ -126,15 +132,11 @@ class Markov:
             self.add_to_training_data(haiku)
 
     def debug_language_string(self):
-        '''
-        Create and return a string containing the language data.
-        '''
+        """Create and return a string containing the language data."""
         return sorted(list(self.language))
 
     def debug_graph_string(self):
-        '''
-        Create and return a string containing the graph data.
-        '''
+        """Create and return a string containing the graph data."""
         debug_string = ''
 
         for word, next_words in self.graph.items():
