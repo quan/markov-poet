@@ -28,7 +28,8 @@ class Token(Enum):
 
 class Markov:
     """
-    Models a Markov chain with words as states.
+    Models a Markov chain for poems representings words as states with emphasis
+    on line breaks.
     """
     def __init__(self, order=1):
         # The number of previous states the Markov Chain will consider.
@@ -41,37 +42,46 @@ class Markov:
 
     def train(self, filename=None):
         """
+        Train the model with a set of data read from a file.
         """
         if filename is None:
             self._train_default()
         else:
             raise NotImplementedError
 
-    def add_to_training_data(self, poem):
+    def add_line(self, line):
         """
-        Add the word parems in a poem to this Markov model's data.
-        Expects a list of strings, where each string is a line in a poem.
+        Add the words of a line to the chain.
         """
+        words = [Token.START] + line.split() + [Token.NEWLINE]
 
-        # Reduce the poem into a single list of words with a newline token following each line.
-        all_words = [Token.START]
-        for line in poem:
-            all_words.extend(line.split())
-            all_words.append(Token.NEWLINE)
-
-        # Save the word pairings in the graph, skipping newlines.
-        for index in range(len(all_words) - 1):
-            word = all_words[index]
-            next_word = all_words[index + 1]
-
-            if word is Token.NEWLINE:
-                continue
+        # Define each word in the language and save word pairings in the graph.
+        # Don't iterate over the closing new line token.
+        for i in range(len(words) - 1):
+            word = words[i]
+            next_word = words[i + 1]
 
             if word not in self.language:
                 self.language.add(word)
                 self.graph[word] = []
 
             self.graph[word].append(next_word)
+
+    def add_poem_as_list(self, poem):
+        """
+        Add the words in a poem to this Markov model's data.
+        Expects a list of strings, where each string is a line in a poem.
+        """
+        for line in poem:
+            self.add_line(line)
+
+    def add_poem(self, poem):
+        """
+        Add the words in a poem to this Markov model's data.
+        Expects a poem as a multi-line string.
+        """
+        poem_lines = poem.split('\n')
+        self.add_poem_as_list(poem_lines)
 
     def generate(self, lines=3, randomness=0):
         """
@@ -100,7 +110,7 @@ class Markov:
         formatted_poem = '\n'.join(generated_lines)
         return formatted_poem
 
-    def generate_line(self):
+    def generate_line(self, randomness=0):
         """Generate a single line in a poem."""
         words = []
 
@@ -129,7 +139,7 @@ class Markov:
         haiku_list = loader.get_all()
 
         for haiku in haiku_list:
-            self.add_to_training_data(haiku)
+            self.add_poem_as_list(haiku)
 
     def debug_language_string(self):
         """Create and return a string containing the language data."""
