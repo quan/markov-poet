@@ -1,23 +1,24 @@
 # Poemarkov
 -----------
 
-<em style="display: block; text-align: left">
+<p align="left"><em>
 red hearts flying<br />
 deep with the chatter of day
-</em>
+</em></p>
 
-<em style="display: block; text-align: center">
+
+<p align="center"><em>
 walking home to the photo<br />
 the sound<br />
 upon red rocks
-</em>
+</em></p>
 
-<em style="display: block; text-align: right">
-*organ reedy as the highway*  
-*in twisted tapers with a winter solstice moon*  
-*under a broken bone of night sky*  
-*dreams of friends reunited*
-</em>
+
+<p align="right"><em>organ reedy as the highway<br />
+in twisted tapers with a winter solstice moon<br />
+under a broken bone of night sky<br />
+dreams of friends reunited
+</em></p>
 
 -----
 
