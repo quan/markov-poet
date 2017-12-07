@@ -42,6 +42,9 @@ class UntrainedModelError(Exception):
 
 
 class Token(Enum):
+    """
+    Used to model special tokens in text: the START of a line and the END of a line.
+    """
     START = '*'
     END = '\n'
 
@@ -60,11 +63,13 @@ class Markov:
         # A mapping of words to a list of words that follow.
         self.graph = {}
 
-    def train(self, filename):
+    def add_file(self, filename):
         """
         Train the model with a set of data read from a file.
         """
-        raise NotImplementedError
+        with open(filename, 'r') as file:
+            text = file.read()
+            self.add_poem(text)
 
     def add_line(self, line):
         """

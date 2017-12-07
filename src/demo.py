@@ -7,11 +7,13 @@ import random
 def main():
     poemarkov = Markov()
 
-    loader = HaikuLoader()
-    haiku_list = loader.get_all()
+    # loader = HaikuLoader()
+    # haiku_list = loader.get_all()
 
-    for haiku in haiku_list:
-        poemarkov.add_poem_as_list(haiku)
+    filename = "all_haiku_lines.txt"
+
+    # for haiku in haiku_list:
+    poemarkov.add_file(filename)
 
     for _ in range(10):
         number_of_lines = random.randint(2, 4)

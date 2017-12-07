@@ -1,21 +1,23 @@
 # Poemarkov
 -----------
 
-*fallen snow by the incoming tide*  
-*mountain*  
-*the sky of whales*  
+<em style="display: block; text-align: left">
+red hearts flying<br />
+deep with the chatter of day
+</em>
 
-<p style="text-align: center"><em>red hearts flying
-deep with the chatter of day</em></p>
+<em style="display: block; text-align: center">
+walking home to the photo<br />
+the sound<br />
+upon red rocks
+</em>
 
-*walking home to the photo*  
-*the sound*  
-*upon red rocks*
-
+<em style="display: block; text-align: right">
 *organ reedy as the highway*  
 *in twisted tapers with a winter solstice moon*  
 *under a broken bone of night sky*  
 *dreams of friends reunited*
+</em>
 
 -----
 
