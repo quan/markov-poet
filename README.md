@@ -1,2 +1,12 @@
-# markov-haiku
-A haiku generator based on a Markov Chain model.
+## poemarkov
+
+A poem generator based on
+
+winter stars
+company's coming
+foggy night
+
+clouds
+freezing
+waiting for a breeze
+

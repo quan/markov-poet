@@ -12,7 +12,6 @@ class UntrainedModelError(Exception):
     An exception raised when the model's generate method is called with
     insufficient training data.
     """
-
     def __init__(self, msg=None):
         if msg is None:
             msg = "Insufficient data was provided to the Markov model"
@@ -22,8 +21,7 @@ class UntrainedModelError(Exception):
 
 class Token(Enum):
     START = '*'
-    NEWLINE = '\n'
-    END = '\n\n'
+    END = '\n'
 
 
 class Markov:
@@ -40,20 +38,17 @@ class Markov:
         # A mapping of words to a list of words that follow.
         self.graph = {}
 
-    def train(self, filename=None):
+    def train(self, filename):
         """
         Train the model with a set of data read from a file.
         """
-        if filename is None:
-            self._train_default()
-        else:
-            raise NotImplementedError
+        raise NotImplementedError
 
     def add_line(self, line):
         """
         Add the words of a line to the chain.
         """
-        words = [Token.START] + line.split() + [Token.NEWLINE]
+        words = [Token.START] + line.split() + [Token.END]
 
         # Define each word in the language and save word pairings in the graph.
         # Don't iterate over the closing new line token.
@@ -88,7 +83,7 @@ class Markov:
         Generate a poem from the training data with the given number of lines.
         Return the poem as a list of lines.
         """
-        if randomness - 1.0 > EPSILON:
+        if randomness < -EPSILON or randomness - 1.0 > EPSILON:
             raise ValueError("Randomness should be a value between 0.0 and 1.0, inclusive")
 
         if len(self.graph.keys()) == 0:
@@ -108,6 +103,7 @@ class Markov:
         """
         generated_lines = self.generate(lines, randomness)
         formatted_poem = '\n'.join(generated_lines)
+
         return formatted_poem
 
     def generate_line(self, randomness=0):
@@ -119,7 +115,7 @@ class Markov:
         next_state = self._next_state(state)
 
         # Follow the chain until a newline is reached.
-        while next_state is not Token.NEWLINE:
+        while next_state is not Token.END:
             state = next_state
             words.append(state)
             next_state = self._next_state(state)
@@ -130,16 +126,10 @@ class Markov:
 
     def _next_state(self, state):
         """Randomly select the next state for a given state."""
-        next_states = tuple(self.graph[state])
-        return random.choice(next_states)
+        possible_states = tuple(self.graph[state])
+        next_state = random.choice(possible_states)
 
-    def _train_default(self):
-        """Train the model using the default example data set."""
-        loader = HaikuLoader()
-        haiku_list = loader.get_all()
-
-        for haiku in haiku_list:
-            self.add_poem_as_list(haiku)
+        return next_state
 
     def debug_language_string(self):
         """Create and return a string containing the language data."""
@@ -155,6 +145,3 @@ class Markov:
         debug_string += 'order of {}'.format(self.order)
 
         return debug_string
-
-    # def __str__(self):
-    #     return self.debug_string()
