@@ -14,13 +14,12 @@ def main(args):
     else:
         markov.add_file(args.filename)
 
+    # Create a generator from the model with the given randomness.
     generator = markov.generator(args.randomness)
 
     for _ in range(args.number):
         print(generator.generate_formatted())
         print()
-
-    # print(markov.debug_graph_string)
 
 
 def create_parser():

@@ -55,8 +55,9 @@ class Markov:
     def __init__(self, order=1):
         # The number of previous states the Markov Chain will consider.
         # Values above 2 are not recommended.
+        # This is currently ignored.
         self.order = order
-        
+
         # A mapping of words to a list of words that follow.
         self.graph = {}
 
@@ -106,7 +107,7 @@ class Markov:
         self.add_lines(poem_lines)
 
     def generator(self, randomness=0.0):
-        """Return a poem generator for the Markov model with some randomness."""
+        """Create a poem generator for the Markov model with some randomness."""
         return self.Generator(self.graph, randomness)
 
     class Generator:
@@ -133,13 +134,14 @@ class Markov:
             Generate a poem from the training data with the given number of lines.
             Return the poem as a list of lines.
             """
-            if len(self.graph.keys()) == 0:
+            if not self.graph.keys():
                 raise UntrainedModelError
 
             poem = []
 
-            for _ in range(lines):
-                line = self.generate_line()
+            for i in range(lines):
+                blank = True if 0 < i < lines - 1 else False
+                line = self.generate_line(blank)
                 poem.append(line)
 
             return poem
@@ -154,29 +156,39 @@ class Markov:
 
             return formatted_poem
 
-        def generate_line(self):
-            """Generate a single line in a poem."""
+        def generate_line(self, blank=True):
+            """
+            Generate a single line in a poem.
+
+            blank: if the line is allowed to be blank.
+            """
             words = []
 
             # Select the first word by beginning with the start token.
             state = self._next_word(Token.START)
 
-            # The nested outer loop and state reset if the words list is empty
-            # after the inner loop ensures that at least one word is generated.
-            while not words:
-                while state is not Token.NEWLINE:
-                    words.append(state)
+            # This loop ensures that at least one word is selected if the line
+            # should not be blank.
+            # The probability of initially selecting a newline is directly
+            # proportional to increased generator randomness.
+            if not blank:
+                while state is Token.NEWLINE:
                     state = self._next_word(state)
 
-                if not words:
-                    state = self._next_word(Token.START)
+            # This loop builds the words list until a newline is encountered.
+            while state is not Token.NEWLINE:
+                words.append(state)
+                state = self._next_word(state)
 
             line = ' '.join(words)
 
             return line
 
         def _next_word(self, state):
-            """Randomly select the next word for a given state or simply a random word."""
+            """
+            Randomly select the next word for a given state or -- based on the
+            randomness factor -- simply a random word.
+            """
             if random.random() < self.randomness:
                 possibilities = tuple(self.random_sample)
             else:
@@ -185,24 +197,6 @@ class Markov:
             next_word = random.choice(possibilities)
 
             return self._next_word(state) if next_word is Token.START else next_word
-
-        def test_next_word(self):
-            """
-            Tests the asymptotic probabability of randomly selecting a new line.
-            """
-            sample_size = 10000
-            number_of_newlines = 0
-            state = Token.START
-
-            for i in range(sample_size):
-                state = self._next_word(state)
-                if state is Token.NEWLINE:
-                    number_of_newlines = number_of_newlines + 1
-                    i = i + 1
-                    state = Token.START
-                    continue
-
-            print("out of {} samples, {} were of newlines".format(sample_size, number_of_newlines))
 
     def debug_string(self):
         """Create and return a string containing the graph data."""
