@@ -1,4 +1,4 @@
-## Poemark
+## Markov Poet
 -----------
 
 <p align="left"><em>
@@ -22,7 +22,8 @@ dreams of friends reunited
 
 -----
 
-Poemark is a poetry generator based on a Markov chain that simulates poetic line breaks by including a new line token in its model.
+Markov Poet is a poetry generator based on a Markov chain that simulates poetic line breaks by including a new line token in its model.
+
 
 ### Usage
 
