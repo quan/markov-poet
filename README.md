@@ -56,6 +56,7 @@ $ python3 demo.py [-h] [-f FILENAME] [-r RANDOMNESS] [-n NUMBER]
 ```
 
 #### Options
-- **-f** filename: specify the name of a file to read as the reference corpus. The expected format is of plain text. The model tokenizes words and line breaks but will ignore other white space.
-- **-r** randomness (between 0.0 and 1.0): introduce an element of randomness into the generation. At 1.0, the chain is ignored and every word is randomly selected from the language. 
-- **-n** number: specify the number of poems to output.
+- **-f** <filename>: specify the name of a file to read as the reference corpus. The expected format is of plain text. The model tokenizes words and line breaks but will ignore other white space.
+- **-r** <randomness> (between 0.0 and 1.0): introduce an element of randomness into the generation. At 1.0, the chain is ignored and every word is randomly selected from the language. 
+- **-n** <number>: specify the number of poems to output.
+- **-o** <order>: specify the size of a state in the Markov chain.
