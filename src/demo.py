@@ -6,7 +6,7 @@ import argparse
 
 
 def main(args):
-    markov = Markov()
+    markov = Markov(args.order)
 
     if args.filename is None:
         print('No filename provided')
@@ -34,6 +34,9 @@ def create_parser():
     parser.add_argument('-f', type=str,
                         dest='filename',
                         help='specify a file to read from')
+    parser.add_argument('-o', type=int,
+                        dest='order', default=1,
+                        help='specify the order of the Markov chain')
     parser.add_argument('-r', type=float,
                         dest='randomness', default=0.0,
                         help='introduce some randomness (between 0.0 and 1.0)')
