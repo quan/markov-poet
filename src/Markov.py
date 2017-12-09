@@ -52,14 +52,15 @@ class Markov:
     Models a Markov chain for poems representings words as states with emphasis
     on line breaks.
     """
-    def __init__(self, order=1):
+    def __init__(self, order=2):
         # The number of previous states the Markov Chain will consider.
         # Values above 2 are not recommended.
-        # This is currently ignored.
         self.order = order
-
         # A mapping of words to a list of words that follow.
         self.graph = {}
+        self.graph[Token.START] = []
+        # A collection of all of the encountered states.
+        self.states = []
 
     def add_file(self, filename):
         """
@@ -72,23 +73,33 @@ class Markov:
     def add_line(self, line):
         """
         Add the words of a line to the chain.
+
+        TODO: strip punctuation from words/states. Maybe.
         """
         words_in_line = list(map(lambda x: x.lower(), line.split()))
-        tokens = [Token.START] + words_in_line + [Token.NEWLINE]
+        tokens = words_in_line + [Token.NEWLINE]
 
-        # Save word pairings in the graph to build the chain.
-        # Stop before the closing new line token to prevent IndexOutOfBounds.
-        for i in range(len(tokens) - 1):
-            word = tokens[i]
-            next_word = tokens[i + 1]
+        # Don't process the line if the line is too short.
+        if len(tokens) <= self.order:
+            return
+        else:
+            state = tuple(tokens[0:self.order])
+            self.graph[Token.START].append(state)
 
-            # Add each word to the language.
-            if word not in self.graph:
-                self.graph[word] = []
+        # Set keys to be states (tuples) of size equal to the order.
+        # For each state, save the next word.
+        for i in range(len(tokens) - self.order):
+            state = tuple(tokens[i:i + self.order])
+            next_word = tokens[i + self.order]
 
-            # Prevent empty lines from being added to the graph.
-            if word is not Token.START or next_word is not Token.NEWLINE:
-                self.graph[word].append(next_word)
+            # Add each state to the language.
+            if state not in self.graph:
+                self.graph[state] = []
+
+            # Add the state to the aggregate population for random sampling.
+            self.states.append(state)
+            # Add the next word to the state's list of next states.
+            self.graph[state].append(next_word)
 
     def add_lines(self, poem):
         """
@@ -118,6 +129,9 @@ class Markov:
             if not -EPSILON < randomness < 1.0 + EPSILON:
                 raise ValueError("Randomness should be a value between 0.0 and 1.0, inclusive")
 
+            if not graph.keys():
+                raise UntrainedModelError
+
             self.graph = graph
 
             # The amount of randomness introduced into word generation.
@@ -125,18 +139,15 @@ class Markov:
 
             # A representative sample of all of the possible states in the chain.
             # self.random_sample = reduce(lambda x, y: x + y, graph.values())
-            self.random_sample = []
-            for values in graph.values():
-                self.random_sample.extend(values)
+            # self.random_sample = []
+            # for values in graph.values():
+            #     self.random_sample.extend(values)
 
         def generate(self, lines=3):
             """
             Generate a poem from the training data with the given number of lines.
             Return the poem as a list of lines.
             """
-            if not self.graph.keys():
-                raise UntrainedModelError
-
             poem = []
 
             for i in range(lines):
@@ -164,21 +175,25 @@ class Markov:
             """
             words = []
 
-            # Select the first word by beginning with the start token.
-            state = self._next_word(Token.START)
+            # Select the first state by beginning with the start token.
+            starting_states = tuple(self.graph[Token.START])
+            state = random.choice(starting_states)
+            words.extend(list(state))
+            next_word = self._next_word(state)
+
+            # This loop builds the words list until a newline is encountered.
+            while next_word is not Token.NEWLINE:
+                words.append(next_word)
+                state = state[1:] + (next_word,)
+                next_word = self._next_word(state)
 
             # This loop ensures that at least one word is selected if the line
             # should not be blank.
             # The probability of initially selecting a newline is directly
             # proportional to increased generator randomness.
-            if not blank:
-                while state is Token.NEWLINE:
-                    state = self._next_word(state)
-
-            # This loop builds the words list until a newline is encountered.
-            while state is not Token.NEWLINE:
-                words.append(state)
-                state = self._next_word(state)
+            # if not blank:
+            #     while state is Token.NEWLINE:
+            #         state = self._next_word(state)
 
             line = ' '.join(words)
 
@@ -189,14 +204,21 @@ class Markov:
             Randomly select the next word for a given state or -- based on the
             randomness factor -- simply a random word.
             """
-            if random.random() < self.randomness:
-                possibilities = tuple(self.random_sample)
-            else:
-                possibilities = tuple(self.graph[state])
+            # if random.random() < self.randomness:
+            #     possibilities = tuple(self.random_sample)
+            # else:
+            #     possibilities = tuple(self.graph[state])
+            possibilities = tuple(self.graph[state])
 
             next_word = random.choice(possibilities)
 
-            return self._next_word(state) if next_word is Token.START else next_word
+            return next_word
+
+        def _next_state(self, state):
+            """
+            """
+            if state is Token.START:
+                possibilities = tuple(self.graph[Token.START])
 
     def debug_string(self):
         """Create and return a string containing the graph data."""
