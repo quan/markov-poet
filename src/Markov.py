@@ -52,15 +52,15 @@ class Markov:
     Models a Markov chain for poems representings words as states with emphasis
     on line breaks.
     """
-    def __init__(self, order=2):
-        # The number of previous states the Markov Chain will consider.
+    def __init__(self, order=1):
+        # The number of words the chain will consider for its current state.
         # Values above 2 are not recommended.
         self.order = order
-        # A mapping of words to a list of words that follow.
+        # A mapping of states to a list of words that follow.
         self.graph = {}
         self.graph[Token.START] = []
         # A collection of all of the encountered states.
-        self.states = []
+        # self.states = []
 
     def add_file(self, filename):
         """
@@ -82,9 +82,10 @@ class Markov:
         # Don't process the line if the line is too short.
         if len(tokens) <= self.order:
             return
+        # Add the starting state to the graph.
         else:
-            state = tuple(tokens[0:self.order])
-            self.graph[Token.START].append(state)
+            starting_state = tuple(tokens[0:self.order])
+            self.graph[Token.START].append(starting_state)
 
         # Set keys to be states (tuples) of size equal to the order.
         # For each state, save the next word.
@@ -97,51 +98,60 @@ class Markov:
                 self.graph[state] = []
 
             # Add the state to the aggregate population for random sampling.
-            self.states.append(state)
+            # self.states.append(state)
             # Add the next word to the state's list of next states.
             self.graph[state].append(next_word)
 
     def add_lines(self, poem):
         """
-        Add the words in a poem to this Markov model's data.
-        Expects a list of strings, where each string is a line in a poem.
+        Add the words in a poem to the chain's data.
+        Expects a poem as a list of lines.
+
+        e.g. ['old pond', 'frog leaping', 'splash']
         """
         for line in poem:
             self.add_line(line)
 
     def add_poem(self, poem):
         """
-        Add the words in a poem to this Markov model's data.
+        Add the words in a poem to the chain's data.
         Expects a poem as a multi-line string.
+
+        e.g. '''the piano room
+        pure ivory keys
+        under a layer of dust'''
         """
         poem_lines = poem.split('\n')
         self.add_lines(poem_lines)
 
     def generator(self, randomness=0.0):
-        """Create a poem generator for the Markov model with some randomness."""
+        """
+        Create a poem generator for the Markov model with some randomness.
+        """
+        # Randomness is not supported for chains of order greater than 1
+        # because I haven't decided how to implement it yet.
+        if self.order > 1:
+            randomness = 0.0
+
         return self.Generator(self.graph, randomness)
 
     class Generator:
         """
         A class that generates poems based on a given chain.
+
+        graph: the data for the chain
+        randomness: the amount of randomness to introduce into state selection
         """
         def __init__(self, graph, randomness):
             if not -EPSILON < randomness < 1.0 + EPSILON:
                 raise ValueError("Randomness should be a value between 0.0 and 1.0, inclusive")
 
+            self.randomness = randomness
+
             if not graph.keys():
                 raise UntrainedModelError
 
             self.graph = graph
-
-            # The amount of randomness introduced into word generation.
-            self.randomness = randomness
-
-            # A representative sample of all of the possible states in the chain.
-            # self.random_sample = reduce(lambda x, y: x + y, graph.values())
-            # self.random_sample = []
-            # for values in graph.values():
-            #     self.random_sample.extend(values)
 
         def generate(self, lines=3):
             """
@@ -170,8 +180,6 @@ class Markov:
         def generate_line(self, blank=True):
             """
             Generate a single line in a poem.
-
-            blank: if the line is allowed to be blank.
             """
             words = []
 
@@ -204,21 +212,14 @@ class Markov:
             Randomly select the next word for a given state or -- based on the
             randomness factor -- simply a random word.
             """
-            # if random.random() < self.randomness:
-            #     possibilities = tuple(self.random_sample)
-            # else:
-            #     possibilities = tuple(self.graph[state])
-            possibilities = tuple(self.graph[state])
+            if random.random() < self.randomness:
+                possibilities = tuple(self.random_sample)
+            else:
+                possibilities = tuple(self.graph[state])
 
             next_word = random.choice(possibilities)
 
             return next_word
-
-        def _next_state(self, state):
-            """
-            """
-            if state is Token.START:
-                possibilities = tuple(self.graph[Token.START])
 
     def debug_string(self):
         """Create and return a string containing the graph data."""
