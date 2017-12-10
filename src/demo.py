@@ -14,6 +14,8 @@ def main(args):
     else:
         markov.add_file(args.filename)
 
+    # print(markov.debug_string())
+
     # Create a generator from the model with the given randomness.
     generator = markov.generator(args.randomness)
 

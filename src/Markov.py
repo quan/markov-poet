@@ -49,18 +49,19 @@ class Token(Enum):
 
 class Markov:
     """
-    Models a Markov chain for poems representings words as states with emphasis
-    on line breaks.
+    Models a Markov chain for poems representing states as n-tuples of words.
+    Emphasizes line breaks as a sink state in generation.
     """
     def __init__(self, order=1):
         # The number of words the chain will consider for its current state.
-        # Values above 2 are not recommended.
         self.order = order
-        # A mapping of states to a list of words that follow.
-        self.graph = {}
-        self.graph[Token.START] = []
-        # A collection of all of the encountered states.
-        # self.states = []
+        # A collection of all of the states that may begin a line.
+        # Used for selecting a starting point for a chain.
+        self.starting_states = []
+        # A collection of all of the encountered states used for random sampling.
+        self.distribution = []
+        # A mapping of each state to a list of words that follow it.
+        self.chain = {}
 
     def add_file(self, filename):
         """
@@ -79,35 +80,35 @@ class Markov:
         words_in_line = list(map(lambda x: x.lower(), line.split()))
         tokens = words_in_line + [Token.NEWLINE]
 
-        # Don't process the line if the line is too short.
-        if len(tokens) <= self.order:
-            return
-        # Add the starting state to the graph.
-        else:
+        # Only process the line if it is long enough, starting by saving the
+        # starting state of the line.
+        if len(tokens) > self.order:
             starting_state = tuple(tokens[0:self.order])
-            self.graph[Token.START].append(starting_state)
+            self.starting_states.append(starting_state)
+        else:
+            return
 
         # Set keys to be states (tuples) of size equal to the order.
-        # For each state, save the next word.
+        # For each state, save a list of the words that follow.
         for i in range(len(tokens) - self.order):
             state = tuple(tokens[i:i + self.order])
             next_word = tokens[i + self.order]
 
             # Add each state to the language.
-            if state not in self.graph:
-                self.graph[state] = []
+            if state not in self.chain:
+                self.chain[state] = []
 
-            # Add the state to the aggregate population for random sampling.
-            # self.states.append(state)
+            # Add the state to the aggregate distribution for random sampling.
+            self.distribution.append(state)
             # Add the next word to the state's list of next states.
-            self.graph[state].append(next_word)
+            self.chain[state].append(next_word)
 
     def add_lines(self, poem):
         """
         Add the words in a poem to the chain's data.
-        Expects a poem as a list of lines.
+        Expects a poem as a list of lines:
 
-        e.g. ['old pond', 'frog leaping', 'splash']
+        example_poem = ['old pond', 'frog leaping', 'splash']
         """
         for line in poem:
             self.add_line(line)
@@ -115,117 +116,103 @@ class Markov:
     def add_poem(self, poem):
         """
         Add the words in a poem to the chain's data.
-        Expects a poem as a multi-line string.
+        Expects a poem as a multi-line string:
 
-        e.g. '''the piano room
+        example_poem = '''the piano room
         pure ivory keys
         under a layer of dust'''
         """
         poem_lines = poem.split('\n')
-        self.add_lines(poem_lines)
+        self.add_lines(poem.split('\n'))
 
     def generator(self, randomness=0.0):
         """
-        Create a poem generator for the Markov model with some randomness.
+        Create a poem generator for the chain with some randomness.
         """
-        # Randomness is not supported for chains of order greater than 1
-        # because I haven't decided how to implement it yet.
-        if self.order > 1:
-            randomness = 0.0
+        chain = self.chain
+        starting_states = self.starting_states
+        distribution = self.distribution
 
-        return self.Generator(self.graph, randomness)
+        return self.Generator(chain, starting_states, distribution, randomness)
 
     class Generator:
         """
         A class that generates poems based on a given chain.
-
-        graph: the data for the chain
-        randomness: the amount of randomness to introduce into state selection
         """
-        def __init__(self, graph, randomness):
+        def __init__(self, chain, starting_states, distribution, randomness):
             if not -EPSILON < randomness < 1.0 + EPSILON:
                 raise ValueError("Randomness should be a value between 0.0 and 1.0, inclusive")
 
-            self.randomness = randomness
-
-            if not graph.keys():
+            if not chain.keys():
                 raise UntrainedModelError
 
-            self.graph = graph
+            self.randomness = randomness
+            # Values from the parent Markov model.
+            self.chain = chain
+            # Convert to tuples for random selection.
+            self.starting_states = tuple(starting_states)
+            self.distribution = tuple(distribution)
 
-        def generate(self, lines=3):
+        def generate_lines(self, lines=3):
             """
-            Generate a poem from the training data with the given number of lines.
+            Generate a poem with n lines by walking through the chain n times.
             Return the poem as a list of lines.
             """
-            poem = []
-
-            for i in range(lines):
-                blank = True if 0 < i < lines - 1 else False
-                line = self.generate_line(blank)
-                poem.append(line)
+            poem = [' '.join(self.generate()) for i in range(lines)]
 
             return poem
 
         def generate_formatted(self, lines=3):
             """
-            Generate a poem based on the training data with the given number of lines.
-            Return the poem as a string.
+            Generate a poem with n lines by walking through the chain n times.
+            Return the poem as a string of n lines.
             """
-            generated_lines = self.generate(lines)
+            generated_lines = self.generate_lines(lines)
             formatted_poem = '\n'.join(generated_lines)
 
             return formatted_poem
 
-        def generate_line(self, blank=True):
+        def generate(self, start_state=None):
             """
-            Generate a single line in a poem.
+            Return a list of words generated by one walk through the chain.
             """
-            words = []
+            # Select a random starting state if one is not provided.
+            # This isn't affected by the randomness factor.
+            state = start_state or random.choice(self.starting_states)
 
-            # Select the first state by beginning with the start token.
-            starting_states = tuple(self.graph[Token.START])
-            state = random.choice(starting_states)
-            words.extend(list(state))
-            next_word = self._next_word(state)
+            # Initialize the list of words to return with the starting words.
+            words = list(state)
 
-            # This loop builds the words list until a newline is encountered.
+            next_word, state = self._step(state)
+            # Step through the chain, building the list of words in this line
+            # until a newline is encountered.
             while next_word is not Token.NEWLINE:
                 words.append(next_word)
-                state = state[1:] + (next_word,)
-                next_word = self._next_word(state)
+                next_word, state = self._step(state)
 
-            # This loop ensures that at least one word is selected if the line
-            # should not be blank.
-            # The probability of initially selecting a newline is directly
-            # proportional to increased generator randomness.
-            # if not blank:
-            #     while state is Token.NEWLINE:
-            #         state = self._next_word(state)
+            return words
 
-            line = ' '.join(words)
-
-            return line
-
-        def _next_word(self, state):
+        def _step(self, state):
             """
-            Randomly select the next word for a given state or -- based on the
-            randomness factor -- simply a random word.
+            Given a state, select the next word at random.
             """
             if random.random() < self.randomness:
-                possibilities = tuple(self.random_sample)
-            else:
-                possibilities = tuple(self.graph[state])
+                state = random.choice(self.distribution)
+
+            possibilities = tuple(self.chain[state])
 
             next_word = random.choice(possibilities)
+            # Create the next state by adding the next word to the tail of
+            # the current state.
+            next_state = state[1:] + (next_word,)
 
-            return next_word
+            return next_word, next_state
 
     def debug_string(self):
-        """Create and return a string containing the graph data."""
+        """Create and return a string containing the chain data."""
         debug_string = ''
 
-        for word, next_words in self.graph.items():
+        for word, next_words in self.chain.items():
             debug_string += '{}: {}\n'.format(word, next_words)
 
         debug_string += 'order of {}'.format(self.order)
