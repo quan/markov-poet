@@ -21,7 +21,6 @@
 # SOFTWARE.
 
 from enum import Enum
-from functools import reduce
 import random
 
 EPSILON = 0.000001
@@ -74,7 +73,7 @@ class Markov:
 
         TODO: strip punctuation from words/states. Maybe.
         """
-        words_in_line = list(map(lambda x: x.lower(), line.split()))
+        words_in_line = [word.lower() for word in line.split()]
         tokens = words_in_line + [Token.NEWLINE]
 
         # Only process the line if it is long enough, starting by saving the
@@ -91,7 +90,6 @@ class Markov:
             state = tuple(tokens[i:i + self.order])
             next_word = tokens[i + self.order]
 
-            # Add each state to the language.
             if state not in self.chain:
                 self.chain[state] = []
 
@@ -105,7 +103,7 @@ class Markov:
         Add the words in a poem to the chain's data.
         Expects a poem as a list of lines:
 
-        example_poem = ['old pond', 'frog leaping', 'splash']
+        example = ['old pond', 'frog leaping', 'splash']
         """
         for line in poem:
             self.add_line(line)
@@ -115,7 +113,7 @@ class Markov:
         Add the words in a poem to the chain's data.
         Expects a poem as a multi-line string:
 
-        example_poem = '''the piano room
+        example = '''the piano room
         pure ivory keys
         under a layer of dust'''
         """
