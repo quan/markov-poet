@@ -1,5 +1,5 @@
+"""Unit tests for the Markov model."""
 import unittest
-
 from Markov import Markov, UntrainedModelError
 
 
@@ -9,14 +9,9 @@ class TestMarkov(unittest.TestCase):
         self.markov = Markov()
 
     def test_untrained_model(self):
-        exception_thrown = False
-
-        try:
+        """Test that generating with an untrained model raises an exception."""
+        with self.assertRaises(UntrainedModelError):
             self.markov.generate()
-        except UntrainedModelError:
-            exception_thrown = True
-
-        self.assertTrue(exception_thrown)
 
 # class TestGeneration(unittest.TestCase):
     

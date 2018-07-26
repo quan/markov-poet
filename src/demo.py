@@ -1,20 +1,44 @@
-from Markov import Markov
-from haiku_loader import HaikuLoader
-
-import random
+"""Demo driver for the Markov Poet."""
 import argparse
 
+from Markov import Markov
 
-def main(args):
+
+def _parse_args():
+    parser = argparse.ArgumentParser(description='Poem generator command line tools.')
+
+    # Not yet implemented.
+    #
+    # parser.add_argument('-v', '--verbose',
+    #                     action='store_const',
+    #                     const=True, default=False,
+    #                     help='keep you updated as stuff happens')
+    parser.add_argument('--filename', '-f',
+                        help='specify a file to read from',
+                        type=str)
+    parser.add_argument('--order', '-o',
+                        help='specify the order of the Markov chain',
+                        type=int, default=1)
+    parser.add_argument('--randomness', '-r',
+                        help='introduce some randomness (between 0.0 and 1.0)',
+                        type=float, default=0.0)
+    parser.add_argument('--number', '-n',
+                        help='Print more than one haiku',
+                        type=int, default=1)
+    return parser.parse_args()
+
+
+def main():
+    """Generate a poem."""
+    args = _parse_args()
     markov = Markov(args.order)
 
     if args.filename is None:
         print('No filename provided')
         return
-    else:
-        markov.add_file(args.filename)
 
-    # print(markov.debug_string())
+    # Read the file and add its contents to the Markov model.
+    markov.add_file(args.filename)
 
     # Create a generator from the model with the given randomness.
     generator = markov.generator(args.randomness)
@@ -24,32 +48,5 @@ def main(args):
         print()
 
 
-def create_parser():
-    parser = argparse.ArgumentParser(description='Poem generator command line tools.')
-
-    # Not yet implemented.
-    #
-    # parser.add_argument('-v', '--verbose',
-    #                     action='store_const',
-    #                     const=True, default=False,
-    #                     help='keep you updated as stuff happens')
-    parser.add_argument('-f', type=str,
-                        dest='filename',
-                        help='specify a file to read from')
-    parser.add_argument('-o', type=int,
-                        dest='order', default=1,
-                        help='specify the order of the Markov chain')
-    parser.add_argument('-r', type=float,
-                        dest='randomness', default=0.0,
-                        help='introduce some randomness (between 0.0 and 1.0)')
-    parser.add_argument('-n', type=int,
-                        dest='number', default=1,
-                        help='Print more than one haiku')
-
-    return parser
-
-
 if __name__ == '__main__':
-    parser = create_parser()
-    args = parser.parse_args()
-    main(args)
+    main()

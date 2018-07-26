@@ -20,10 +20,8 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-from enum import Enum
 import random
-
-EPSILON = 0.000001
+from typing import Dict, List, Tuple
 
 
 class UntrainedModelError(Exception):
@@ -31,53 +29,50 @@ class UntrainedModelError(Exception):
     An exception raised when the model's generate method is called with
     insufficient training data.
     """
+    # pylint: disable=useless-super-delegation
     def __init__(self, msg="Insufficient data was provided to the Markov model"):
-        super(UntrainedModelError, self).__init__(msg)
+        super().__init__(msg)
 
 
-class Token(Enum):
-    """
-    Used to model special tokens in text: the start of a line and a newline.
-    """
-    START = '*'
-    NEWLINE = '\n'
-
-
-class Markov:
+class Markov(object):
     """
     Models a Markov chain for poems representing states as n-tuples of words.
     Emphasizes line breaks as a sink state in generation.
     """
-    def __init__(self, order=1):
+    def __init__(self, order: int = 1):
         # The number of words the chain will consider for its current state.
-        self.order = order
+        self.order: int = order
         # A collection of all of the states that may begin a line.
         # Used for selecting a starting point for a chain.
-        self.starting_states = []
+        self.starting_states: List[Tuple] = []
         # A collection of all of the encountered states used for random sampling.
-        self.distribution = []
+        self.distribution: List[Tuple] = []
         # A mapping of each state to a list of words that follow it.
-        self.chain = {}
+        self.chain: Dict[Tuple, List[str]] = {}
 
-    def add_file(self, filename):
+    def add_file(self, filename: str):
         """
         Train the model with a corpus read from a file.
+
+        Args:
+            filename (str): Name of a text file.
         """
         with open(filename, 'r') as file:
-            text = file.read()
-            self.add_poem(text)
+            self.add_poem(file.read())
 
-    def add_line(self, line):
+    def add_line(self, line: str):
         """
         Add the words of a line to the chain.
 
+        Args:
+            line (str): A line to analyze.
+
         TODO: strip punctuation from words/states. Maybe.
         """
-        words_in_line = [word.lower() for word in line.split()]
-        tokens = words_in_line + [Token.NEWLINE]
+        tokens = [word.lower() for word in line.split()]
+        tokens.append('\n')
 
-        # Only process the line if it is long enough, starting by saving the
-        # starting state of the line.
+        # Only process the line if it is long enough.
         if len(tokens) > self.order:
             starting_state = tuple(tokens[0:self.order])
             self.starting_states.append(starting_state)
@@ -98,20 +93,22 @@ class Markov:
             # Add the next word to the state's list of next states.
             self.chain[state].append(next_word)
 
-    def add_lines(self, poem):
-        """
-        Add the words in a poem to the chain's data.
-        Expects a poem as a list of lines:
+    def add_lines(self, poem: List[str]):
+        """Add the words in a poem to the chain's data.
+
+        Args:
+            poem (str): A poem as a list of lines.
 
         example = ['old pond', 'frog leaping', 'splash']
         """
         for line in poem:
             self.add_line(line)
 
-    def add_poem(self, poem):
-        """
-        Add the words in a poem to the chain's data.
-        Expects a poem as a multi-line string:
+    def add_poem(self, poem: str):
+        """Add the words in a poem to the chain's data.
+
+        Args:
+            poem (str): A poem as a multi-line string.
 
         example = '''the piano room
         pure ivory keys
@@ -119,9 +116,11 @@ class Markov:
         """
         self.add_lines(poem.split('\n'))
 
-    def generator(self, randomness=0.0):
-        """
-        Create a poem generator for the chain with some randomness.
+    def generator(self, randomness: float = 0.0):
+        """Create a poem generator for the chain with some randomness.
+
+        Args:
+            randomness (float): Amount of randomness to introduce into generation.
         """
         chain = self.chain
         starting_states = self.starting_states
@@ -130,12 +129,10 @@ class Markov:
         return self.Generator(chain, starting_states, distribution, randomness)
 
     class Generator:
-        """
-        A class that generates poems based on a given chain.
-        """
-        def __init__(self, chain, starting_states, distribution, randomness):
-            if not -EPSILON < randomness < 1.0 + EPSILON:
-                raise ValueError("Randomness should be a value between 0.0 and 1.0, inclusive")
+        """Generates poems based on a given Markov chain."""
+        def __init__(self, chain: Dict, starting_states: List, distribution: List, randomness: float):
+            if not 0 - 1e9 < randomness < 1 + 1e9:
+                raise ValueError("Randomness should be a value between 0 and 1, inclusive")
 
             if not chain.keys():
                 raise UntrainedModelError
@@ -147,7 +144,7 @@ class Markov:
             self.starting_states = tuple(starting_states)
             self.distribution = tuple(distribution)
 
-        def generate(self, start_state=None):
+        def generate(self, start_state: Tuple = None):
             """
             Return a list of words generated by one walk through the chain.
             """
@@ -159,50 +156,33 @@ class Markov:
             words = list(state)
 
             next_word, state = self._step(state)
-            # Step through the chain, building the list of words in this line
-            # until a newline is encountered.
-            while next_word is not Token.NEWLINE:
+            while next_word != '\n':
                 words.append(next_word)
                 next_word, state = self._step(state)
 
             return words
 
         def generate_line(self):
-            """
-            Generate a single line of a poem by walking through the chain.
-            """
+            """Generate a single line of a poem by walking through the chain."""
             return ' '.join(self.generate())
 
-        def generate_lines(self, number_of_lines=3):
-            """
-            Generate a poem with n lines by walking through the chain n times.
-            Return the poem as a list of lines.
-            """
+        def generate_lines(self, number_of_lines: int = 3):
+            """Generate a poem with n lines by walking through the chain n times."""
             return [self.generate_line() for _ in range(number_of_lines)]
 
-        def generate_formatted(self, number_of_lines=3):
-            """
-            Generate a poem with n lines by walking through the chain n times.
-            Return the poem as a string of n lines.
-            """
+        def generate_formatted(self, number_of_lines: int = 3):
+            """Generate a poem with n lines by walking through the chain n times."""
             return '\n'.join(self.generate_lines(number_of_lines))
 
-        def _step(self, state):
-            """
-            Given a state, select the next word at random, returning the word
-            and constructing the next state.
-            """
+        def _step(self, state: Tuple):
+            """Given a state, select the next word and next state."""
             # Randomization is achieved by selecting a different state before stepping.
             if random.random() < self.randomness:
                 state = random.choice(self.distribution)
 
             possibilities = tuple(self.chain[state])
-
             next_word = random.choice(possibilities)
-            # Create the next state by adding the next word to the tail of
-            # the current state.
             next_state = state[1:] + (next_word,)
-
             return next_word, next_state
 
     def debug_string(self):
