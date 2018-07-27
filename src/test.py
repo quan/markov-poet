@@ -1,6 +1,7 @@
 """Unit tests for the Markov model."""
 import unittest
-from Markov import Markov, UntrainedModelError
+
+from markov import Markov, UntrainedModelError
 
 
 class TestMarkov(unittest.TestCase):

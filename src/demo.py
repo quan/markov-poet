@@ -1,7 +1,7 @@
 """Demo driver for the Markov Poet."""
 import argparse
 
-from Markov import Markov
+from markov import Markov
 
 
 def _parse_args():
