@@ -21,6 +21,7 @@
 # SOFTWARE.
 
 import random
+import sys
 from typing import Dict, List, Tuple
 
 
@@ -131,7 +132,7 @@ class Markov(object):
     class Generator:
         """Generates poems based on a given Markov chain."""
         def __init__(self, chain: Dict, starting_states: List, distribution: List, randomness: float):
-            if not 0 - 1e9 < randomness < 1 + 1e9:
+            if not 0 - sys.float_info.epsilon < randomness < 1 + sys.float_info.epsilon:
                 raise ValueError("Randomness should be a value between 0 and 1, inclusive")
 
             if not chain.keys():
