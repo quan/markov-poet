@@ -50,18 +50,48 @@ number_of_lines = 7
 print(generator.generate_formatted(number_of_lines))
 ```
 
-Also included is a demo driver.
-
+To run tests:
 ```bash
-$ python3 demo.py [-h] [-f FILENAME] [-r RANDOMNESS] [-n NUMBER] [-o ORDER]
-$ python3 demo.py -f sample_corpus.txt
+$ pwd
+/path/to/markov-poet
+$ python3 -m tests.test
 ```
 
-#### Options
-- **-f** <filename>: specify the name of a file to read as the reference corpus. The expected format is of plain text. The model tokenizes words and line breaks but will ignore other white space.
-- **-r** <randomness> (between 0.0 and 1.0): introduce an element of randomness into the generation. At 1.0, the chain is ignored and every word is randomly selected from the language. The default value is 0.0.
-- **-n** <number>: specify the number of poems to output. The default 
-- **-o** <order>: specify the size of a state in the chain. The default value is 1.
+### Demo
+
+Also included is a demo driver.
+```bash
+usage: demo.py [-h] [--filename FILENAME] [--order ORDER]
+               [--randomness RANDOMNESS] [--number NUMBER]
+
+Poem generator command line tools.
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --filename FILENAME, -f FILENAME
+                        specify a file to read from
+  --order ORDER, -o ORDER
+                        specify the order of the Markov chain
+  --randomness RANDOMNESS, -r RANDOMNESS
+                        introduce some randomness (between 0.0 and 1.0)
+  --number NUMBER, -n NUMBER
+                        Print more than one haiku
+```
+
+#### Demo Options
+- **--filename**/**-f** <filename>: specify the name of a file to read as the reference corpus. The expected format is of plain text. The model tokenizes words and line breaks but will ignore other white space.
+- **--randomness**/**-r** <randomness> (between 0.0 and 1.0): introduce an element of randomness into the generation. At 1.0, the chain is ignored and every word is randomly selected from the language. The default value is 0.0.
+- **--number**/**-n** <number>: specify the number of poems to output. The default is 3.
+- **--order**/**-o** <order>: specify the size of a state in the chain. The default value is 1.
+
+Example:
+```bash
+$ pwd
+/path/to/markov-poet
+$ python3 -m sample.demo -f sample/haiku.txt
+$ python3 -m sample.demo -f sample/kanye.txt --number 3 --order 2
+```
 
 #### Credits
-- Sample corpus from the [Haiku Society of America](http://www.hsa-haiku.org/frogpond/museumawardscollection.html)
+- Sample haiku corpus from the [Haiku Society of America](http://www.hsa-haiku.org/frogpond/museumawardscollection.html)
+- Sample Kanye lyrics from Kanye West
