@@ -41,7 +41,7 @@ def main():
     markov.add_file(args.filename)
 
     # Create a generator from the model with the given randomness.
-    generator = markov.generator(args.randomness)
+    generator = markov.make_generator(args.randomness)
 
     for _ in range(args.number):
         print(generator.generate_formatted())

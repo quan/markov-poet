@@ -117,7 +117,7 @@ class Markov(object):
         """
         self.add_lines(poem.split('\n'))
 
-    def generator(self, randomness: float = 0.0):
+    def make_generator(self, randomness: float = 0.0):
         """Create a poem generator for the chain with some randomness.
 
         Args:
