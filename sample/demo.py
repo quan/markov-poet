@@ -38,7 +38,8 @@ def main():
         return
 
     # Read the file and add its contents to the Markov model.
-    markov.add_file(args.filename)
+    with open(args.filename) as corpus_f:
+        markov.add_poem(corpus_f.read())
 
     # Create a generator from the model with the given randomness.
     generator = markov.make_generator(args.randomness)

@@ -51,16 +51,6 @@ class Markov(object):
         # A mapping of each state to a list of words that follow it.
         self.chain: Dict[Tuple, List[str]] = {}
 
-    def add_file(self, filename: str):
-        """
-        Train the model with a corpus read from a file.
-
-        Args:
-            filename (str): Name of a text file.
-        """
-        with open(filename, 'r') as file:
-            self.add_poem(file.read())
-
     def add_line(self, line: str):
         """
         Add the words of a line to the chain.
